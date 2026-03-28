@@ -192,6 +192,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
     <!-- 入出庫履歴 -->
     <div id="page-log" class="page">
       <div class="page-header"><div><h1>入出庫履歴</h1></div></div>
+      <div class="filter-area" style="margin-bottom:16px">
+        <div class="filter-row">
+          <span class="filter-label">種別</span>
+          <div class="chip-group">
+            <button class="chip active" id="log-filter-all" onclick="setLogType('all')">すべて</button>
+            <button class="chip" id="log-filter-in" onclick="setLogType('in')">入庫</button>
+            <button class="chip" id="log-filter-out" onclick="setLogType('out')">出庫</button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">担当者</span>
+          <div class="chip-group" id="log-staff-chips"></div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">検索</span>
+          <input type="text" class="search-input" id="log-search" placeholder="品名で検索" oninput="renderLogs()" />
+        </div>
+      </div>
       <div id="log-content">
         <table class="log-table">
           <thead><tr><th>日時</th><th>品名</th><th>種別</th><th>数量</th><th>担当者</th></tr></thead>
@@ -408,10 +426,46 @@ function renderItems() {
   }).join('');
 }
 
+let logTypeFilter = 'all';
+let logStaffFilter = 'すべて';
+
+function setLogType(type) {
+  logTypeFilter = type;
+  ['all','in','out'].forEach(t => {
+    document.getElementById('log-filter-' + t)?.classList.toggle('active', t === type);
+  });
+  renderLogs();
+}
+
+function setLogStaff(staff) {
+  logStaffFilter = staff;
+  renderLogs();
+  buildLogStaffChips();
+}
+
+function buildLogStaffChips() {
+  const staffInLogs = ['すべて', ...new Set(logs.map(l => l.staff))];
+  const el = document.getElementById('log-staff-chips');
+  if (el) el.innerHTML = staffInLogs.map(s =>
+    `<button class="chip ${s===logStaffFilter?'active':''}" onclick="setLogStaff('${s}')">${s}</button>`
+  ).join('');
+}
+
 function renderLogs() {
+  buildLogStaffChips();
+  const q = (document.getElementById('log-search')?.value || '').toLowerCase();
   const tbody = document.getElementById('log-body');
-  if (!logs.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa">まだ記録がありません</td></tr>'; return; }
-  tbody.innerHTML = logs.slice().reverse().map(l => {
+  const filtered = logs.filter(l => {
+    const matchType = logTypeFilter === 'all' || l.type === logTypeFilter;
+    const matchStaff = logStaffFilter === 'すべて' || l.staff === logStaffFilter;
+    const matchQ = !q || l.itemName.toLowerCase().includes(q);
+    return matchType && matchStaff && matchQ;
+  });
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#aaa">該当する履歴がありません</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.slice().reverse().map(l => {
     const isIn = l.type==='in';
     return `<tr><td>${l.date}</td><td>${l.itemName}</td><td>${isIn?'入庫':'出庫'}</td><td class="${isIn?'log-plus':'log-minus'}">${isIn?'+':'-'}${l.qty}</td><td>${l.staff}</td></tr>`;
   }).join('');
