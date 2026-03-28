@@ -221,10 +221,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
     <!-- スタッフ管理 -->
     <div id="page-staff" class="page">
       <div class="page-header">
-        <div><h1>スタッフ</h1><p>入出庫記録に使うスタッフ名を管理します</p></div>
+        <div><h1>スタッフ</h1><p id="current-user-label">入出庫記録に使うスタッフ名を管理します</p></div>
         <button class="btn-primary" onclick="openAddMaster('staff')">＋ 追加</button>
       </div>
+      <div style="background:#e8f0fe;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:12px;color:#1a5dc8">このデバイスの担当者</div>
+          <div style="font-size:16px;font-weight:600;margin-top:2px" id="whoami-display">未設定</div>
+        </div>
+        <button onclick="openWhoami()" style="height:34px;padding:0 16px;border-radius:8px;border:1px solid #aac4f0;font-size:13px;cursor:pointer;background:#fff;color:#1a5dc8;font-weight:600">変更</button>
+      </div>
       <div class="master-list" id="staff-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 初回ユーザー設定モーダル -->
+<div class="modal-bg" id="modal-whoami">
+  <div class="modal">
+    <h2>はじめに</h2>
+    <p style="font-size:14px;color:#888;margin-bottom:20px">あなたの名前を選んでください。入出庫の担当者として自動で入力されます。</p>
+    <div class="form-row">
+      <label>あなたの名前</label>
+      <select id="whoami-select"></select>
+    </div>
+    <p style="font-size:12px;color:#aaa;margin-top:8px">※この設定はこのデバイスに保存されます。スタッフページからいつでも変更できます。</p>
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="confirm" onclick="saveWhoami()">決定</button>
     </div>
   </div>
 </div>
@@ -236,7 +259,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
     <div class="form-row"><label>品名</label><div style="font-size:15px;font-weight:600" id="modal-io-name"></div></div>
     <div class="form-row">
       <label>担当者</label>
-      <select id="modal-staff"></select>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:15px;font-weight:600" id="modal-staff-name"></div>
+        <button onclick="openWhoami()" style="height:28px;padding:0 12px;border-radius:6px;border:1px solid #ddd;font-size:12px;cursor:pointer;background:#f5f5f5;color:#888">変更</button>
+      </div>
     </div>
     <div class="form-row">
       <label>変更数量</label>
@@ -573,6 +599,36 @@ function deleteMaster(type, index) {
 }
 
 // 入庫・出庫
+// whoami（このデバイスの担当者設定）
+let currentUser = localStorage.getItem('whoami') || '';
+
+function updateWhoamiDisplay() {
+  const display = document.getElementById('whoami-display');
+  if (display) display.textContent = currentUser || '未設定';
+}
+
+function openWhoami() {
+  const sel = document.getElementById('whoami-select');
+  sel.innerHTML = staffList.map(s =>
+    `<option value="${s}" ${s===currentUser?'selected':''}>${s}</option>`
+  ).join('');
+  document.getElementById('modal-whoami').classList.add('open');
+}
+
+function saveWhoami() {
+  const val = document.getElementById('whoami-select').value;
+  currentUser = val;
+  localStorage.setItem('whoami', val);
+  updateWhoamiDisplay();
+  document.getElementById('modal-whoami').classList.remove('open');
+}
+
+function checkFirstVisit() {
+  if (!currentUser || !staffList.includes(currentUser)) {
+    openWhoami();
+  }
+}
+
 function openIO(itemId, type) {
   currentId = itemId; currentIOType = type;
   const item = items.find(i => i.id===itemId);
@@ -580,14 +636,14 @@ function openIO(itemId, type) {
   document.getElementById('modal-io-title').textContent = type==='in' ? '入庫を記録' : '出庫を記録';
   document.getElementById('modal-io-btn').textContent = type==='in' ? '入庫確定' : '出庫確定';
   document.getElementById('modal-qty').value = 1;
-  document.getElementById('modal-staff').innerHTML = staffList.map(s => `<option>${s}</option>`).join('');
+  document.getElementById('modal-staff-name').textContent = currentUser || 'スタッフ未設定';
   document.getElementById('modal-io').classList.add('open');
 }
 
 function confirmIO() {
   const item = items.find(i => i.id===currentId);
   const qty = parseInt(document.getElementById('modal-qty').value) || 1;
-  const staff = document.getElementById('modal-staff').value;
+  const staff = currentUser || 'スタッフ未設定';
   if (currentIOType==='out' && item.stock < qty) { alert('在庫数が不足しています'); return; }
   item.stock += currentIOType==='in' ? qty : -qty;
   logs.push({ itemId:item.id, itemName:item.name, type:currentIOType, qty, staff, date:now() });
@@ -679,6 +735,8 @@ function closeAll() {
 
 buildFilters();
 renderItems();
+updateWhoamiDisplay();
+checkFirstVisit();
 </script>
 </body>
 </html>
