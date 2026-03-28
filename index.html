@@ -6,7 +6,8 @@
 <title>設備在庫管理</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f0f0ee; color: #1a1a1a; -webkit-text-size-adjust: 100%; }
+html { max-width: 100%; overflow-x: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: #f0f0ee; color: #1a1a1a; -webkit-text-size-adjust: 100%; overflow-x: hidden; touch-action: manipulation; }
 .sp-nav { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
 .layout { display: flex; min-height: 100vh; }
 /* サイドバー */
@@ -114,9 +115,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-ser
 @media (max-width: 768px) {
   .sidebar { display: none; }
   .main { margin-left: 0; padding: 0; }
-  .sp-nav { display: flex; background: #1a1a1a; padding: 8px 12px; gap: 4px; overflow-x: auto; scrollbar-width: none; }
-  .sp-nav::-webkit-scrollbar { display: none; }
-  .sp-nav-item { flex-shrink: 0; height: 34px; padding: 0 14px; border-radius: 8px; font-size: 13px; cursor: pointer; color: #888; border: none; background: none; white-space: nowrap; }
+  .sp-nav { display: flex; background: #1a1a1a; padding: 8px; gap: 4px; flex-wrap: wrap; }
+  .sp-nav-item { flex: 1; min-width: calc(20% - 4px); height: 34px; padding: 0 8px; border-radius: 8px; font-size: 12px; cursor: pointer; color: #888; border: none; background: none; white-space: nowrap; text-align: center; }
   .sp-nav-item.active { background: #2e2e2e; color: #fff; }
   .page-header { padding: 16px 16px 0; }
   .page-header h1 { font-size: 19px; }
